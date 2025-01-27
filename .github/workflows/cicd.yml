@@ -12,30 +12,39 @@ on:
 jobs:
   Continues-Integration_build_and_push:
     runs-on: ubuntu-latest
+    env:
+     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      with:
-        repository: digitalwitchdemo/main_bank_app_frontend
-        ref: main
+      - uses: act10ns/slack@v2
+        with:
+          status: started Deployment
+          channel: '#gitaction_pipeline_status_notifications'
+          message: Started Frontend App deployment to GCloud Kubernetes cluster...
+        if: always()
+   
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+         repository: BenjaminAdimachukwu/bank_app_frontend
+         ref: main
          
          
-    - name: Build container image
-      run: docker build -t ${{ secrets.REGISTRY_NAME }}/bank-app-frontend:${{ github.run_number }} .
+      - name: Build container image
+        run: docker build -t ${{ secrets.REGISTRY_NAME }}/bank-app-frontend:${{ github.run_number }} .
     
-    - name: Log in to Docker Registry with short-lived credentials
-      run: docker login -u ${{ secrets.REGISTRY_NAME }} --password ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Log in to Docker Registry with short-lived credentials
+        run: docker login -u ${{ secrets.REGISTRY_NAME }} --password ${{ secrets.DOCKERHUB_TOKEN }}
     
-    - name: Push image to Docker Registry
-      run: docker push ${{ secrets.REGISTRY_NAME }}/bank-app-frontend:${{ github.run_number }}
+      - name: Push image to Docker Registry
+        run: docker push ${{ secrets.REGISTRY_NAME }}/bank-app-frontend:${{ github.run_number }}
 
 
-    - name: Clean up Docker image locally
-      run: docker rmi ${{ secrets.REGISTRY_NAME }}/bank-app-frontend:${{ github.run_number }}
+      - name: Clean up Docker image locally
+        run: docker rmi ${{ secrets.REGISTRY_NAME }}/bank-app-frontend:${{ github.run_number }}
 
-    - name: Clean up GitHub repo on runner
-      run: rm -rf ./*
+      - name: Clean up GitHub repo on runner
+        run: rm -rf ./*
 
       
   Continues-Deployment:
@@ -49,7 +58,7 @@ jobs:
       - name: Update the kubernetes Deployment file. 
         run: |
           cat deployment/deploy.yaml
-          sed -i "s+supportcloud160/bank-app-frontend:.*+supportcloud160/bank-app-frontend:${{ github.run_number }}+g" deployment/deploy.yaml
+          sed -i "s+zenithcloudonline/bank-app-frontend:.*+zenithcloudonline/bank-app-frontend:${{ github.run_number }}+g" deployment/deploy.yaml
           cat deployment/deploy.yaml
           
       - name: Authenticate to GCP
@@ -80,3 +89,11 @@ jobs:
         run: |
             kubectl apply -f deployment
             kubectl get all
+
+      - uses: act10ns/slack@v2
+        with:
+          status: ${{ job.status }}
+          steps: ${{ toJson(steps) }}
+          channel: '#gitaction_pipeline_status_notifications'
+        if: always()
+        #test

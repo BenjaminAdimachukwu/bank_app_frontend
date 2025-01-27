@@ -7,7 +7,7 @@ spec:
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
-  commonName: bank.cloudwitches.online
+  commonName: bank.zenithcloud.online
   dnsNames:
-    - bank.cloudwitches.online
-    - bankapi.cloudwitches.online
+    - bank.zenithcloud.online
+    - bankapi.zenithcloud.online
